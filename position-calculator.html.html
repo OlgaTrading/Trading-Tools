@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Position & Risk Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0b1120;
+    --surface: #111c30;
+    --surface2: #172440;
+    --border: rgba(100,160,255,0.1);
+    --border2: rgba(100,160,255,0.2);
+    --text: #e8f0ff;
+    --muted: #7a9ac0;
+    --accent: #60c8ff;
+    --accent-dim: rgba(96,200,255,0.12);
+    --red: #ff6b6b;
+    --red-dim: rgba(255,107,107,0.14);
+    --green: #3ddc97;
+    --green-dim: rgba(61,220,151,0.13);
+    --amber: #ffcc55;
+    --amber-dim: rgba(255,204,85,0.13);
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .app { width: 100%; max-width: 960px; }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  header h1 {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  header span { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+
+  .row { display: grid; gap: 12px; margin-bottom: 12px; }
+  .row.cols2 { grid-template-columns: 1fr 1fr; }
+  .row.cols1 { grid-template-columns: 1fr; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+
+  .card-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card-label::before {
+    content: '';
+    display: inline-block;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .panel-tag {
+    font-size: 9px;
+    font-family: var(--mono);
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(96,200,255,0.2);
+    border-radius: 4px;
+    padding: 2px 7px;
+    margin-left: auto;
+    letter-spacing: 0.05em;
+  }
+
+  .fields { display: grid; gap: 10px; }
+  .fields.two   { grid-template-columns: 1fr 1fr; }
+  .fields.three { grid-template-columns: 1fr 1fr 1fr; }
+  .fields.four  { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    font-family: var(--mono);
+  }
+
+  .input-wrap { position: relative; }
+
+  .input-wrap .sym {
+    position: absolute;
+    left: 11px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: var(--accent);
+    font-family: var(--mono);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    height: 38px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: #ffffff;
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    padding: 0 10px;
+    outline: none;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  input[type="number"]:focus { border-color: var(--accent); }
+  .has-sym input { padding-left: 24px; }
+
+  .derived-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .derived-box {
+    background: var(--accent-dim);
+    border: 1px solid rgba(96,200,255,0.18);
+    border-radius: 7px;
+    padding: 9px 12px;
+  }
+
+  .derived-box .dlabel {
+    font-size: 9px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 3px;
+  }
+
+  .derived-box .dval {
+    font-size: 15px;
+    font-weight: 500;
+    font-family: var(--mono);
+    color: var(--accent);
+  }
+
+  .derived-box.highlight {
+    background: rgba(96,200,255,0.18);
+    border-color: rgba(96,200,255,0.4);
+  }
+
+  .derived-box.highlight .dval {
+    font-size: 22px;
+    color: #ffffff;
+  }
+
+  .derived-box.highlight .dlabel {
+    color: var(--accent);
+  }
+
+  .hint {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    margin-top: 10px;
+    padding: 7px 10px;
+    background: rgba(255,204,85,0.07);
+    border-left: 2px solid var(--amber);
+    border-radius: 4px;
+    display: none;
+  }
+
+  .results {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .metric {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .metric.good { border-color: rgba(61,220,151,0.3);  background: var(--green-dim); }
+  .metric.bad  { border-color: rgba(255,107,107,0.3); background: var(--red-dim); }
+  .metric.warn { border-color: rgba(255,204,85,0.3);  background: var(--amber-dim); }
+
+  .metric .mlabel {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .metric .mval {
+    font-family: var(--mono);
+    font-size: 19px;
+    font-weight: 500;
+    color: #ffffff;
+    line-height: 1.2;
+  }
+
+  .metric.good .mval { color: var(--green); }
+  .metric.bad  .mval { color: var(--red); }
+  .metric.warn .mval { color: var(--amber); }
+
+  .metric .msub {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-top: 3px;
+  }
+
+  .rrbar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--surface2);
+    margin-top: 8px;
+    overflow: hidden;
+    display: flex;
+  }
+
+  .rrbar-risk   { background: var(--red);   transition: width 0.3s; }
+  .rrbar-reward { background: var(--green); transition: width 0.3s; }
+
+  .alerts { display: flex; flex-direction: column; gap: 8px; }
+
+  .alert {
+    display: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: var(--mono);
+    border-left: 3px solid;
+  }
+
+  .alert.danger { background: var(--red-dim);   border-color: var(--red);   color: var(--red); }
+  .alert.warn   { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 12px; }
+
+  @media (max-width: 700px) {
+    .results { grid-template-columns: 1fr 1fr; }
+    .row.cols2 { grid-template-columns: 1fr; }
+    .fields.three, .fields.four { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <h1>position_calc</h1>
+    <span>stocks / equities · USD</span>
+  </header>
+
+  <!-- Account -->
+  <div class="row cols1">
+    <div class="card">
+      <div class="card-label">Account</div>
+      <div class="fields three">
+        <div class="field">
+          <label>Account size</label>
+          <div class="input-wrap has-sym"><span class="sym">$</span><input type="number" id="account" value="10000" step="100" /></div>
+        </div>
+        <div class="field">
+          <label>Max risk / trade</label>
+          <div class="input-wrap has-sym"><span class="sym">%</span><input type="number" id="riskPct" value="1" step="0.1" min="0.01" max="100" /></div>
+        </div>
+        <div class="field">
+          <label>Max loss / day</label>
+          <div class="input-wrap has-sym"><span class="sym">$</span><input type="number" id="maxDayLoss" value="200" step="10" /></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two trade setup panels -->
+  <div class="row cols2">
+
+    <!-- Panel A: Price levels -->
+    <div class="card">
+      <div class="card-label">
+        Price levels
+        <span class="panel-tag">enter prices + optional shares</span>
+      </div>
+      <div class="fields four">
+        <div class="field">
+          <label>Entry price</label>
+          <div class="input-wrap has-sym"><span class="sym">$</span><input type="number" id="A_entry" value="50" step="0.01" /></div>
+        </div>
+        <div class="field">
+          <label>Stop loss price</label>
+          <div class="input-wrap has-sym"><span class="sym">$</span><input type="number" id="A_stop" value="48" step="0.01" /></div>
+        </div>
+        <div class="field">
+          <label>Target price</label>
+          <div class="input-wrap has-sym"><span class="sym">$</span><input type="number" id="A_target" value="55" step="0.01" /></div>
+        </div>
+        <div class="field">
+          <label>Shares (optional)</label>
+          <input type="number" id="A_shares" placeholder="auto" step="1" min="1" />
+        </div>
+      </div>
+      <div class="derived-grid">
+        <div class="derived-box">
+          <div class="dlabel">Risk per share</div>
+          <div class="dval" id="A_riskPerShare">—</div>
+        </div>
+        <div class="derived-box">
+          <div class="dlabel">Reward per share</div>
+          <div class="dval" id="A_rewardPerShare">—</div>
+        </div>
+        <div class="derived-box">
+          <div class="dlabel">Suggested shares</div>
+          <div class="dval" id="A_sugShares">—</div>
+        </div>
+        <div class="derived-box">
+          <div class="dlabel">Position value</div>
+          <div class="dval" id="A_posVal">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel B: Dollar amounts -->
+    <div class="card">
+      <div class="card-label">
+        Dollar amounts
+        <span class="panel-tag">enter $ risk &amp; reward</span>
+      </div>
+      <div class="fields four">
+        <div class="field">
+          <label>Entry price</label>
+          <div class="input-wrap has-sym"><span class="sym">$</span><input type="number" id="B_entry" value="50" step="0.01" /></div>
+        </div>
+        <div class="field">
+          <label>Total risk $</label>
+          <div class="input-wrap has-sym"><span class="sym">$</span><input type="number" id="B_stopAmt" value="100" step="1" min="0.01" /></div>
+        </div>
+        <div class="field">
+          <label>Total profit target $</label>
+          <div class="input-wrap has-sym"><span class="sym">$</span><input type="number" id="B_tpAmt" value="250" step="1" min="0.01" /></div>
+        </div>
+        <div class="field">
+          <label>Shares</label>
+          <input type="number" id="B_shares" placeholder="enter shares" step="1" min="1" />
+        </div>
+      </div>
+      <!-- Hint shown when shares not entered -->
+      <div class="hint" id="B_hint">
+        ↑ Enter number of shares to calculate your stop &amp; target prices
+      </div>
+      <div class="derived-grid">
+        <div class="derived-box highlight">
+          <div class="dlabel">Stop loss price</div>
+          <div class="dval" id="B_stopPrice">—</div>
+        </div>
+        <div class="derived-box highlight">
+          <div class="dlabel">Target price</div>
+          <div class="dval" id="B_targetPrice">—</div>
+        </div>
+        <div class="derived-box">
+          <div class="dlabel">Risk per share</div>
+          <div class="dval" id="B_riskPerShare">—</div>
+        </div>
+        <div class="derived-box">
+          <div class="dlabel">Position value</div>
+          <div class="dval" id="B_posVal">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Portfolio limits + alerts -->
+  <div class="row cols2">
+    <div class="card">
+      <div class="card-label">Portfolio limits</div>
+      <div class="fields two">
+        <div class="field">
+          <label>Max open positions</label>
+          <input type="number" id="maxPositions" value="5" step="1" min="1" />
+        </div>
+        <div class="field">
+          <label>Leverage</label>
+          <div class="input-wrap has-sym"><span class="sym">×</span><input type="number" id="leverage" value="0" step="0.5" min="0" /></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Alerts</div>
+      <div class="alerts">
+        <div class="alert danger" id="alert-stop">⚠ Stop loss must be below entry price.</div>
+        <div class="alert warn"   id="alert-rr">↙ Risk/reward below 1:1 — poor setup.</div>
+        <div class="alert warn"   id="alert-cap">↑ Position exceeds available capital.</div>
+        <div class="alert warn"   id="alert-trades">⛔ At or near daily loss limit.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- Results -->
+  <div class="results">
+    <div class="metric" id="m-shares">
+      <div class="mlabel">Shares</div>
+      <div class="mval" id="v-shares">—</div>
+      <div class="msub" id="s-shares"></div>
+    </div>
+    <div class="metric" id="m-posval">
+      <div class="mlabel">Position value</div>
+      <div class="mval" id="v-posval">—</div>
+      <div class="msub" id="s-posval"></div>
+    </div>
+    <div class="metric bad" id="m-risk">
+      <div class="mlabel">Total risk</div>
+      <div class="mval" id="v-risk">—</div>
+      <div class="msub" id="s-risk"></div>
+    </div>
+    <div class="metric good" id="m-reward">
+      <div class="mlabel">Total reward</div>
+      <div class="mval" id="v-reward">—</div>
+      <div class="msub" id="s-reward"></div>
+    </div>
+    <div class="metric" id="m-rr">
+      <div class="mlabel">Risk / reward</div>
+      <div class="mval" id="v-rr">—</div>
+      <div class="rrbar"><div class="rrbar-risk" id="bar-risk" style="width:50%"></div><div class="rrbar-reward" id="bar-reward" style="width:50%"></div></div>
+    </div>
+    <div class="metric" id="m-maxpos">
+      <div class="mlabel">Max position value</div>
+      <div class="mval" id="v-maxpos">—</div>
+      <div class="msub" id="s-maxpos"></div>
+    </div>
+    <div class="metric" id="m-capused">
+      <div class="mlabel">Capital used</div>
+      <div class="mval" id="v-capused">—</div>
+      <div class="msub" id="s-capused"></div>
+    </div>
+    <div class="metric" id="m-trades">
+      <div class="mlabel">Trades to day limit</div>
+      <div class="mval" id="v-trades">—</div>
+      <div class="msub" id="s-trades"></div>
+    </div>
+  </div>
+
+</div>
+<script>
+function fmt(n, dec=2) {
+  return '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+}
+function fmtN(n) { return Math.round(n).toLocaleString('en-US'); }
+
+function setD(id, val) { document.getElementById(id).textContent = val; }
+
+function setMetric(id, val, sub, cls) {
+  document.getElementById('v-'+id).textContent = val;
+  const s = document.getElementById('s-'+id);
+  if (s && sub !== null) s.textContent = sub;
+  document.getElementById('m-'+id).className = cls ? 'metric '+cls : 'metric';
+}
+
+function showAlert(id, show) {
+  document.getElementById('alert-'+id).style.display = show ? 'block' : 'none';
+}
+
+function getShared() {
+  const account      = +document.getElementById('account').value      || 0;
+  const riskPct      = +document.getElementById('riskPct').value      || 0;
+  const maxDayLoss   = +document.getElementById('maxDayLoss').value   || 0;
+  const maxPositions = +document.getElementById('maxPositions').value || 1;
+  const rawLev       = +document.getElementById('leverage').value;
+  const leverage     = rawLev <= 0 ? 1 : rawLev;
+  return { account, riskPct, maxDayLoss, maxPositions, leverage, rawLev };
+}
+
+function clearResults(showStopAlert) {
+  if (showStopAlert) showAlert('stop', true);
+  ['rr','cap','trades'].forEach(a => showAlert(a, false));
+  ['shares','posval','risk','reward','rr','maxpos','capused','trades'].forEach(k => {
+    document.getElementById('v-'+k).textContent = '—';
+    const s = document.getElementById('s-'+k);
+    if (s) s.textContent = '';
+  });
+  document.getElementById('bar-risk').style.width  = '50%';
+  document.getElementById('bar-reward').style.width = '50%';
+}
+
+function runResults(entry, stop, target, sharesOverride, sh) {
+  const riskPerShare   = entry - stop;
+  const rewardPerShare = target > entry ? target - entry : 0;
+  const maxRisk        = (sh.account * sh.riskPct) / 100;
+  const autoShares     = riskPerShare > 0 ? Math.floor(maxRisk / riskPerShare) : 0;
+  const shares         = sharesOverride > 0 ? sharesOverride : autoShares;
+  const posVal         = shares * entry;
+  const riskAmt        = shares * riskPerShare;
+  const rewardAmt      = shares * rewardPerShare;
+  const rrRatio        = riskPerShare > 0 ? rewardPerShare / riskPerShare : 0;
+  const maxPosVal      = (sh.account / sh.maxPositions) * sh.leverage;
+  const capPct         = (posVal / (sh.account * sh.leverage)) * 100;
+  const tradesLeft     = riskAmt > 0 ? Math.floor(sh.maxDayLoss / riskAmt) : 0;
+  const levLabel       = sh.rawLev <= 0 ? 'no leverage' : 'x'+sh.leverage+' leverage';
+
+  showAlert('stop',   false);
+  showAlert('rr',     rewardPerShare > 0 && rrRatio < 1);
+  showAlert('cap',    posVal > sh.account * sh.leverage);
+  showAlert('trades', tradesLeft <= 1 && riskAmt > 0);
+
+  setMetric('shares',  fmtN(shares), '@ '+fmt(entry)+' each', null);
+  setMetric('posval',  fmt(posVal,0), levLabel, null);
+  setMetric('risk',    fmt(riskAmt,0), sh.riskPct+'% of account', 'bad');
+  setMetric('reward',
+    rewardPerShare > 0 ? fmt(rewardAmt,0) : '—',
+    rewardPerShare > 0 && riskAmt > 0 ? ((rewardAmt/riskAmt)*100).toFixed(0)+'% return on risk' : 'no target set',
+    'good');
+
+  const rrCls = rrRatio >= 2 ? 'good' : rrRatio >= 1 ? '' : rewardPerShare > 0 ? 'warn' : '';
+  document.getElementById('v-rr').textContent = rrRatio > 0 ? '1 : '+rrRatio.toFixed(2) : '—';
+  document.getElementById('m-rr').className = 'metric'+(rrCls ? ' '+rrCls : '');
+
+  const total = riskPerShare + rewardPerShare;
+  document.getElementById('bar-risk').style.width   = (total > 0 ? riskPerShare/total*100 : 50).toFixed(1)+'%';
+  document.getElementById('bar-reward').style.width = (total > 0 ? rewardPerShare/total*100 : 50).toFixed(1)+'%';
+
+  setMetric('maxpos',  fmt(maxPosVal,0), 'max per single position', posVal > maxPosVal ? 'warn' : null);
+  setMetric('capused', capPct.toFixed(1)+'%', 'of available capital', capPct > 25 ? 'warn' : 'good');
+  setMetric('trades',  fmtN(tradesLeft), 'before $'+fmtN(sh.maxDayLoss)+' daily limit',
+    tradesLeft <= 1 ? 'bad' : tradesLeft <= 3 ? 'warn' : 'good');
+
+  return { autoShares, posVal, riskPerShare, rewardPerShare };
+}
+
+// ── Panel A: price levels ──────────────────────────────────
+function calcA() {
+  const entry    = +document.getElementById('A_entry').value  || 0;
+  const stop     = +document.getElementById('A_stop').value   || 0;
+  const target   = +document.getElementById('A_target').value || 0;
+  const sharesIn = +document.getElementById('A_shares').value || 0;
+  const sh = getShared();
+
+  const rps = entry > 0 && stop > 0 && stop < entry ? entry - stop : 0;
+  const rwps = entry > 0 && target > entry ? target - entry : 0;
+  const maxRisk = (sh.account * sh.riskPct) / 100;
+  const auto = rps > 0 ? Math.floor(maxRisk / rps) : 0;
+  const use  = sharesIn > 0 ? sharesIn : auto;
+
+  setD('A_riskPerShare',   rps  > 0 ? fmt(rps)  : '—');
+  setD('A_rewardPerShare', rwps > 0 ? fmt(rwps) : '—');
+  setD('A_sugShares', auto > 0 ? fmtN(auto) : '—');
+  setD('A_posVal',    use  > 0 && entry > 0 ? fmt(use * entry, 0) : '—');
+
+  if (!entry || !stop || stop >= entry) { clearResults(true); return; }
+  runResults(entry, stop, target, sharesIn, sh);
+}
+
+// ── Panel B: dollar amounts ────────────────────────────────
+function calcB() {
+  const entry    = +document.getElementById('B_entry').value   || 0;
+  const stopAmt  = +document.getElementById('B_stopAmt').value || 0;
+  const tpAmt    = +document.getElementById('B_tpAmt').value   || 0;
+  const sharesIn = +document.getElementById('B_shares').value  || 0;
+  const sh = getShared();
+  const hint = document.getElementById('B_hint');
+
+  if (!entry || !stopAmt) {
+    hint.style.display = 'none';
+    setD('B_stopPrice','—'); setD('B_targetPrice','—');
+    setD('B_riskPerShare','—'); setD('B_posVal','—');
+    clearResults(false); return;
+  }
+
+  if (sharesIn <= 0) {
+    // No shares yet — show hint, can't derive prices
+    hint.style.display = 'block';
+    setD('B_stopPrice','need shares'); setD('B_targetPrice','need shares');
+    setD('B_riskPerShare','—'); setD('B_posVal','—');
+    clearResults(false); return;
+  }
+
+  hint.style.display = 'none';
+
+  // With shares known: derive per-share amounts → then prices
+  const riskPerShare   = stopAmt / sharesIn;
+  const rewardPerShare = tpAmt   / sharesIn;
+  const derivedStop    = entry - riskPerShare;
+  const derivedTarget  = entry + rewardPerShare;
+
+  setD('B_stopPrice',    derivedStop > 0 ? fmt(derivedStop) : '⚠ negative');
+  setD('B_targetPrice',  fmt(derivedTarget));
+  setD('B_riskPerShare', fmt(riskPerShare));
+  setD('B_posVal',       fmt(sharesIn * entry, 0));
+
+  // Sync derived prices back to left panel
+  if (derivedStop > 0) {
+    document.getElementById('A_stop').value   = derivedStop.toFixed(2);
+    document.getElementById('A_target').value = derivedTarget.toFixed(2);
+    document.getElementById('A_shares').value = sharesIn;
+  }
+
+  if (derivedStop <= 0) { clearResults(true); return; }
+  runResults(entry, derivedStop, derivedTarget, sharesIn, sh);
+}
+
+// Wire panel A — sync entry to B
+document.getElementById('A_entry').addEventListener('input', () => {
+  lastPanel = 'A';
+  document.getElementById('B_entry').value = document.getElementById('A_entry').value;
+  calcA();
+});
+['A_stop','A_target','A_shares'].forEach(id =>
+  document.getElementById(id).addEventListener('input', () => { lastPanel='A'; calcA(); }));
+
+// Wire panel B — sync entry to A
+document.getElementById('B_entry').addEventListener('input', () => {
+  lastPanel = 'B';
+  document.getElementById('A_entry').value = document.getElementById('B_entry').value;
+  calcB();
+});
+['B_stopAmt','B_tpAmt','B_shares'].forEach(id =>
+  document.getElementById(id).addEventListener('input', () => { lastPanel='B'; calcB(); }));
+
+// Shared
+let lastPanel = 'A';
+['account','riskPct','maxDayLoss','maxPositions','leverage'].forEach(id =>
+  document.getElementById(id).addEventListener('input', () =>
+    lastPanel === 'B' ? calcB() : calcA()));
+
+calcA();
+</script>
+</body>
+</html>
