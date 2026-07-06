@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Trading Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080c10;--bg2:#0d1117;--bg3:#111820;
+  --border:#1e2d3d;--border2:#243547;
+  --cyan:#00d4ff;--cyan-dim:rgba(0,212,255,0.1);
+  --green:#00ff88;--green-dim:rgba(0,255,136,0.1);
+  --amber:#ffcc00;--amber-dim:rgba(255,204,0,0.1);
+  --purple:#a855f7;--purple-dim:rgba(168,85,247,0.1);
+  --text:#c8d8e8;--text-dim:#607080;--text-bright:#e8f4ff;
+}
+body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(0,212,255,0.015) 28px,rgba(0,212,255,0.015) 29px),
+  repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(0,212,255,0.015) 28px,rgba(0,212,255,0.015) 29px);}
+.wrap{max-width:700px;width:100%;position:relative;z-index:1;}
+.header{text-align:center;margin-bottom:48px;}
+.logo{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;letter-spacing:4px;color:var(--cyan);text-shadow:0 0 30px rgba(0,212,255,0.4);margin-bottom:8px;}
+.tagline{font-size:11px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;}
+.pulse-wrap{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(0.7);}}
+.live-label{font-size:10px;color:var(--green);letter-spacing:2px;}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+@media(max-width:500px){.tools{grid-template-columns:1fr;}}
+.tool-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;text-decoration:none;transition:all 0.2s;display:block;}
+.tool-card:hover{border-color:var(--cyan);box-shadow:0 0 20px rgba(0,212,255,0.1);transform:translateY(-2px);}
+.tool-card.scanner:hover{border-color:var(--cyan);}
+.tool-card.planner:hover{border-color:var(--green);}
+.tool-card.manual:hover{border-color:var(--amber);}
+.tool-card.premarket:hover{border-color:var(--purple);}
+.tool-icon{font-size:28px;margin-bottom:12px;}
+.tool-name{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;margin-bottom:6px;}
+.tool-card.scanner .tool-name{color:var(--cyan);}
+.tool-card.planner .tool-name{color:var(--green);}
+.tool-card.manual .tool-name{color:var(--amber);}
+.tool-card.premarket .tool-name{color:var(--purple);}
+.tool-desc{font-size:10px;color:var(--text-dim);line-height:1.7;}
+.tool-tag{display:inline-block;font-size:9px;padding:2px 7px;border-radius:3px;margin-top:10px;font-weight:600;}
+.tool-card.scanner .tool-tag{background:rgba(0,212,255,0.12);color:var(--cyan);border:1px solid rgba(0,212,255,0.3);}
+.tool-card.planner .tool-tag{background:rgba(0,255,136,0.12);color:var(--green);border:1px solid rgba(0,255,136,0.3);}
+.tool-card.manual .tool-tag{background:rgba(255,204,0,0.12);color:var(--amber);border:1px solid rgba(255,204,0,0.3);}
+.tool-card.premarket .tool-tag{background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.3);}
+.footer{text-align:center;font-size:10px;color:var(--text-dim);line-height:1.8;}
+.footer a{color:var(--text-dim);text-decoration:none;}
+.footer a:hover{color:var(--cyan);}
+.divider{border:none;border-top:1px solid var(--border);margin:24px 0;}
+.time-display{text-align:center;font-size:11px;color:var(--text-dim);margin-bottom:24px;padding:8px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;display:inline-block;}
+.time-display.open{color:var(--green);border-color:rgba(0,255,136,0.3);background:var(--green-dim);}
+.time-display.closed{color:var(--text-dim);}
+.time-center{text-align:center;margin-bottom:24px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="logo">SC TRADING</div>
+    <div class="tagline">Intraday Momentum Tools</div>
+    <div class="pulse-wrap">
+      <div class="pulse"></div>
+      <span class="live-label">LIVE — Powered by Finnhub</span>
+    </div>
+  </div>
+
+  <div class="time-center">
+    <div class="time-display" id="timeDisplay">--:-- UK</div>
+  </div>
+
+  <div class="tools">
+    <a href="confluence-scanner-v7.html" class="tool-card scanner">
+      <div class="tool-icon">📡</div>
+      <div class="tool-name">SC SCANNER v7</div>
+      <div class="tool-desc">Live momentum scanner across NASDAQ 100, Dow Jones 30, S&P 500 and Russell 2000. Confluence scoring, news catalyst, FL Stage detection, RVOL and short interest.</div>
+      <div class="tool-tag">NASDAQ · DOW · S&P · RUSSELL</div>
+    </a>
+
+    <a href="trade-planner-v3.html" class="tool-card planner">
+      <div class="tool-icon">⚡</div>
+      <div class="tool-name">TRADE PLANNER v3</div>
+      <div class="tool-desc">Pre-trade gate with auto checks, FL checklist, gut check and gate lock. Multi-strategy support — Fashionably Late, Rubber Band, Second Day Play.</div>
+      <div class="tool-tag">GATE · CHECKLIST · LOG</div>
+    </a>
+
+
+  </div>
+
+  <hr class="divider"/>
+
+  <div class="footer">
+    Best trading hours: <strong style="color:var(--green)">2:30pm – 9:00pm UK</strong> (US market open)<br/>
+    Pre-market prep: <strong style="color:var(--amber)">9:00am – 2:30pm UK</strong><br/><br/>
+    <a href="https://finnhub.io" target="_blank" rel="noopener">Finnhub.io</a> &nbsp;·&nbsp;
+    <a href="https://finviz.com" target="_blank" rel="noopener">Finviz</a> &nbsp;·&nbsp;
+    <a href="https://tradingview.com" target="_blank" rel="noopener">TradingView</a>
+  </div>
+
+</div>
+<script>
+function updateTime(){
+  var now = new Date();
+  var uk = new Date(now.toLocaleString('en-US',{timeZone:'Europe/London'}));
+  var h = uk.getHours(), m = uk.getMinutes();
+  var open = (h > 14 || (h === 14 && m >= 30)) && h < 21;
+  var el = document.getElementById('timeDisplay');
+  el.textContent = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ' UK - ' + (open ? 'MARKET OPEN' : 'MARKET CLOSED');
+  el.className = 'time-display ' + (open ? 'open' : 'closed');
+}
+updateTime();
+setInterval(updateTime, 30000);
+</script>
+</body>
+</html>
